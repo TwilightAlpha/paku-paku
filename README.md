@@ -50,3 +50,7 @@ npm test
 ## Tuning cheat-sheet
 
 All in `CONFIG` (top of `index.html`): `playerSpeed`, `ghostSpeed`, `frightTimeBase`, `modeWaves`, `releaseDelays`, `speedRampPerLevel`.
+
+## Deploy
+
+Static `index.html` + `/api/leaderboard` on Vercel. Production: https://paku-paku.vercel.app
