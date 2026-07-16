@@ -192,6 +192,21 @@ const AudioSys = (() => {
   };
 })();
 
+/* ================= MAP STATE ================= */
+let grid = [], dotsLeft = 0;
+function loadMap() {
+  grid = MAP_SRC.map(row => row.split(""));
+  dotsLeft = 0;
+  for (const row of grid) for (const ch of row) if (ch === "." || ch === "o") dotsLeft++;
+}
+const isWall = (c, r, canDoor=false) => {
+  if (r === TUNNEL_ROW && (c < 0 || c >= COLS)) return false; // tunnel wrap
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
+  const ch = grid[r][c];
+  if (ch === "=") return !canDoor;
+  return ch === "#";
+};
+
 
 </script>
 </body>
