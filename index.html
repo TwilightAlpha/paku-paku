@@ -332,6 +332,45 @@ function reverseGhosts() {
   for (const g of ghosts) if (g.mode === "active") g.nextDir = OPP[g.dir];
 }
 
+/* ================= RESETS ================= */
+function resetPositions(fullRelease=false) {
+  const pc = centerOf(13, 23); player.x = pc.x; player.y = pc.y;
+  player.dir = null; player.nextDir = "left"; player.mouth = 0; player.acc = 0;
+  ghosts.forEach((g, i) => {
+    g.acc = 0; g.nextDir = null; g.bob = 0;
+    if (i === 0) { const h = centerOf(HOME.c, HOME.r); g.x = h.x; g.y = h.y; g.mode = "active"; g.dir = "left"; g.decide = () => ghostDecide(g); }
+    else {
+      const h = centerOf(g.houseCol, 14); g.x = h.x; g.y = h.y;
+      g.mode = "house"; g.dir = "up"; g.decide = null;
+      g.releaseT = CONFIG.releaseDelays[i] * (fullRelease ? 0.4 : 1);
+    }
+  });
+  G.fright = 0; G.ghostCombo = 0; G.modeIndex = 0; G.modeT = 0;
+  AudioSys.siren("");
+}
+
+function startLevel(fresh) {
+  if (fresh) loadMap();
+  resetPositions();
+  setState("READY");
+  AudioSys.jingle();
+}
+
+function newGame() {
+  G.score = 0; G.lives = CONFIG.lives; G.level = 1; G.awardedLife = false; G.popups = [];
+  startLevel(true);
+}
+
+function setState(s) { G.state = s; G.stateT = 0; }
+
+function addScore(n) {
+  G.score += n;
+  if (G.score > G.high) G.high = G.score;
+  if (!G.awardedLife && G.score >= CONFIG.extraLifeAt) { G.awardedLife = true; G.lives++; AudioSys.extraLife(); }
+}
+
+function popup(x, y, text, color="#21ffff") { G.popups.push({ x, y, text, color, t: 1 }); }
+
 
 </script>
 </body>
