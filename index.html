@@ -371,6 +371,41 @@ function addScore(n) {
 
 function popup(x, y, text, color="#21ffff") { G.popups.push({ x, y, text, color, t: 1 }); }
 
+/* ================= UPDATE ================= */
+function update(dt) {
+  G.stateT += dt;
+  if (G.freeze > 0) { G.freeze -= dt; return; }
+
+  switch (G.state) {
+    case "TITLE": break;
+    case "READY": if (G.stateT > 2.1) setState("PLAY"); break;
+    case "PLAY": updatePlay(dt); break;
+    case "DYING":
+      player.deathT += dt;
+      if (player.deathT > 1.6) {
+        G.lives--;
+        if (G.lives <= 0) { finishGame(); }
+        else { resetPositions(true); setState("READY"); }
+      }
+      break;
+    case "CLEAR":
+      if (G.stateT > 2.2) { G.level++; startLevel(true); }
+      break;
+    case "GAMEOVER": if (G.stateT > 2.5) afterGameOver(); break;
+    case "INITIALS": break;
+    case "BOARD": if (G.stateT > 8) setState("TITLE"); break;
+  }
+
+  // Floating score popups always tick
+  for (const p of G.popups) p.t -= dt * 0.9;
+  G.popups = G.popups.filter(p => p.t > 0);
+  G.flashT += dt;
+}
+
+function finishGame() {
+  setState("GAMEOVER");
+  AudioSys.siren("");
+}
 
 </script>
 </body>
