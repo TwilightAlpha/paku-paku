@@ -239,6 +239,48 @@ function stepEntity(e, speed, canDoor=false) {
   }
 }
 
+/* ================= GAME STATE ================= */
+const G = {
+  state: "TITLE",          // TITLE READY PLAY DYING CLEAR GAMEOVER INITIALS BOARD
+  score: 0, high: 0, lives: 0, level: 1,
+  frames: 0, stateT: 0, freeze: 0,
+  fright: 0, ghostCombo: 0,
+  modeIndex: 0, modeT: 0,  // scatter/chase schedule
+  paused: false, awardedLife: false,
+  popups: [],              // floating score text
+  board: [ {name:"AAA", score:1500} ], // seeded so the top spot looks beatable
+  boardStatus: "ready",    // ready | loading
+  boardOffline: false,
+  pendingScore: 0,         // score waiting for name entry
+  flashT: 0,
+};
+
+const player = { x:0, y:0, dir:null, nextDir:null, mouth:0, deathT:0, moving:false, acc:0 };
+
+function makeGhost(name, color, scatter, houseCol) {
+  return { name, color, scatter, houseCol,
+    x:0, y:0, dir:"left", nextDir:null, acc:0, moving:true,
+    mode:"house",           // house | exiting | active | eaten
+    releaseT:0, bob:0,
+    decide: null };
+}
+const ghosts = [
+  makeGhost("chaser",   "#ff2121", {c:26,r:1},  13),
+  makeGhost("ambusher", "#ffb8ff", {c:1, r:1},  13),
+  makeGhost("flanker",  "#21ffff", {c:26,r:29}, 11),
+  makeGhost("shy",      "#ffb852", {c:1, r:29}, 16),
+];
+
+function speedScale() {
+  return Math.min(CONFIG.speedRampCap, 1 + (G.level - 1) * CONFIG.speedRampPerLevel);
+}
+function frightTime() {
+  return Math.max(CONFIG.frightTimeMin, CONFIG.frightTimeBase - (G.level - 1) * 0.6);
+}
+function currentWave() {
+  return G.modeIndex % 2 === 0 ? "scatter" : "chase";
+}
+
 
 </script>
 </body>
