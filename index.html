@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>PAKU PAKU</title>
+<link rel="shortcut icon" href="/paku-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="/paku-icon.png?v=3">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="/paku-icon-180.png?v=3">
+<style>
+  :root { --bg:#000; --blue:#2121ff; --gold:#ffcc33; --cyan:#21ffff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:var(--bg); overflow:hidden; }
+  body { display:flex; flex-direction:column; align-items:center; justify-content:center;
+         font-family:"Courier New", ui-monospace, monospace; -webkit-user-select:none; user-select:none; }
+  #wrap { position:relative; }
+  canvas { display:block; image-rendering:pixelated; }
+  /* CRT scanlines + vignette — the cabinet feel */
+  #scan { position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0px, rgba(0,0,0,.22) 1px, transparent 1px, transparent 3px);
+  }
+  #hint { color:#555; font-size:11px; letter-spacing:2px; margin-top:10px; text-transform:uppercase; }
+  /* Name entry overlay — real <input> so mobile keyboards appear */
+  #nameEntry {
+    display:none; position:absolute; left:50%; bottom:7%; transform:translateX(-50%);
+    width:min(86%, 260px); z-index:6; text-align:center; pointer-events:auto;
+    flex-direction:column; align-items:center; gap:10px;
+  }
+  #nameEntry.show { display:flex; }
+  #nameEntry label {
+    display:block; color:var(--gold); font:bold 13px "Courier New", monospace;
+    letter-spacing:2px; text-transform:uppercase;
+  }
+  #nameInput {
+    width:100%; background:#0d1b2a; color:var(--gold); border:2px solid var(--cyan);
+    font:bold 18px "Courier New", monospace; text-align:center; padding:10px 8px;
+    outline:none; border-radius:0; -webkit-appearance:none; appearance:none;
+    caret-color:var(--gold); text-transform:none; line-height:1.2;
+  }
+  #nameInput::placeholder { color:#556; }
+  #nameEntry .row { display:flex; gap:10px; justify-content:center; align-items:center; width:100%; }
+  #nameSkip {
+    background:#000; color:#aaa; border:1px solid #555; font:11px "Courier New", monospace;
+    letter-spacing:1px; padding:8px 16px; cursor:pointer; text-transform:uppercase;
+  }
+  #nameSkip:hover, #nameSkip:active { color:#fff; border-color:#aaa; }
+  #nameHint { color:#555; font:10px "Courier New", monospace; letter-spacing:1px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="448" height="560"></canvas>
+  <div id="scan"></div>
+  <div id="nameEntry" aria-hidden="true">
+    <label for="nameInput">ENTER NAME</label>
+    <input id="nameInput" type="text" maxlength="20" autocomplete="off" autocorrect="off"
+           autocapitalize="characters" spellcheck="false" placeholder="PLAYER" inputmode="text">
+    <div class="row">
+      <button type="button" id="nameSkip">TAP TO SKIP</button>
+    </div>
+    <div id="nameHint">ENTER TO CONFIRM</div>
+  </div>
+</div>
+<div id="hint">arrows / wasd &middot; swipe on touch &middot; m mute &middot; p pause</div>
+
+
+</body>
+</html>
