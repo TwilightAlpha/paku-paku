@@ -580,6 +580,52 @@ function updatePlay(dt) {
   }
 }
 
+/* ================= RENDER ================= */
+function draw() {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+  drawHUD();
+  ctx.save();
+  ctx.translate(0, HUD);
+
+  if (G.state === "TITLE") { drawTitle(); ctx.restore(); return; }
+  if (G.state === "INITIALS" || G.state === "BOARD") { drawBoard(); ctx.restore(); return; }
+
+  drawMaze();
+  drawDots();
+
+  for (const g of ghosts) drawGhost(g);
+  if (G.state !== "GAMEOVER") drawPlayer();
+
+  for (const p of G.popups) {
+    ctx.fillStyle = p.color; ctx.globalAlpha = Math.min(1, p.t);
+    ctx.font = "bold 12px monospace"; ctx.textAlign = "center";
+    ctx.fillText(p.text, p.x, p.y - (1 - p.t) * 18);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.font = "bold 16px monospace"; ctx.textAlign = "center";
+  if (G.state === "READY")    { ctx.fillStyle = "#ffff00"; ctx.fillText("READY!", COLS*T/2, 17.6*T); }
+  if (G.state === "GAMEOVER") { ctx.fillStyle = "#ff2121"; ctx.fillText("GAME OVER", COLS*T/2, 17.6*T); }
+  if (G.paused)               { ctx.fillStyle = "#fff";    ctx.fillText("PAUSED", COLS*T/2, 17.6*T); }
+  ctx.restore();
+}
+
+function drawHUD() {
+  ctx.font = "bold 13px monospace"; ctx.fillStyle = "#fff";
+  ctx.textAlign = "left";  ctx.fillText("SCORE " + G.score, 12, 21);
+  ctx.textAlign = "center";ctx.fillText("HI " + G.high, cvs.width/2, 21);
+  ctx.textAlign = "right"; ctx.fillText("LV " + G.level + (AudioSys.muted ? "  \u{1F507}" : ""), cvs.width - 12, 21);
+  // lives at bottom
+  for (let i = 0; i < Math.max(0, G.lives - 1); i++) {
+    drawArcMan(24 + i * 22, HUD + ROWS*T + 16, 7, "right", 0.25, "#ffcc33");
+  }
+}
+
+function drawMaze() {
+  const flashing = G.state === "CLEAR" && (Math.floor(G.stateT * 8) % 2 === 0);
+  const col = flashing ? "#ffffff" : "#2121ff";
 
 </script>
 </body>
