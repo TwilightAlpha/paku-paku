@@ -626,6 +626,106 @@ function drawHUD() {
 function drawMaze() {
   const flashing = G.state === "CLEAR" && (Math.floor(G.stateT * 8) % 2 === 0);
   const col = flashing ? "#ffffff" : "#2121ff";
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  // soft glow pass then crisp pass
+  for (const pass of [{ w: 5, a: 0.25 }, { w: 2, a: 1 }]) {
+    ctx.strokeStyle = col; ctx.globalAlpha = pass.a; ctx.lineWidth = pass.w;
+    ctx.beginPath();
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] !== "#") continue;
+      const x = c*T, y = r*T;
+      if (!isWall(c, r-1, true)) { ctx.moveTo(x, y+2);     ctx.lineTo(x+T, y+2); }
+      if (!isWall(c, r+1, true)) { ctx.moveTo(x, y+T-2);   ctx.lineTo(x+T, y+T-2); }
+      if (!isWall(c-1, r, true)) { ctx.moveTo(x+2, y);     ctx.lineTo(x+2, y+T); }
+      if (!isWall(c+1, r, true)) { ctx.moveTo(x+T-2, y);   ctx.lineTo(x+T-2, y+T); }
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // ghost house door
+  ctx.strokeStyle = "#ffb8de"; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(DOOR.c*T + 1, DOOR.r*T + T/2);
+  ctx.lineTo((DOOR.c+2)*T - 1, DOOR.r*T + T/2);
+  ctx.stroke();
+}
+
+function drawDots() {
+  ctx.fillStyle = "#ffb8ae";
+  const blinkOn = Math.floor(G.flashT * 5) % 2 === 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const ch = grid[r][c];
+    const { x, y } = centerOf(c, r);
+    if (ch === ".") ctx.fillRect(x-2, y-2, 4, 4);
+    else if (ch === "o" && blinkOn) { ctx.beginPath(); ctx.arc(x, y, 5.5, 0, 7); ctx.fill(); }
+  }
+}
+
+function drawArcMan(x, y, rad, dir, mouthPhase, color) {
+  const open = 0.28 * (0.5 + 0.5 * Math.sin(mouthPhase * Math.PI * 2)); // 0..0.28 half-angle (fraction of PI)
+  const base = { right: 0, left: Math.PI, up: -Math.PI/2, down: Math.PI/2 }[dir || "left"];
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, rad, base + open * Math.PI, base - open * Math.PI + Math.PI*2);
+  ctx.closePath(); ctx.fill();
+}
+
+function drawPlayer() {
+  if (G.state === "DYING") {
+    // classic death: mouth opens all the way around, then a small pop
+    const t = Math.min(1, player.deathT / 1.2);
+    const a = t * Math.PI;
+    ctx.fillStyle = "#ffcc33";
+    ctx.beginPath(); ctx.moveTo(player.x, player.y);
+    ctx.arc(player.x, player.y, 8, -Math.PI/2 + a, -Math.PI/2 - a + Math.PI*2);
+    ctx.closePath();
+    if (t < 1) ctx.fill();
+    else for (let i = 0; i < 8; i++) {
+      const ang = i * Math.PI/4, rr = (player.deathT - 1.2) * 40;
+      ctx.fillRect(player.x + Math.cos(ang)*rr, player.y + Math.sin(ang)*rr, 2, 2);
+    }
+    return;
+  }
+  drawArcMan(player.x, player.y, 8, player.dir || "left", player.moving ? player.mouth : 0.25, "#ffcc33");
+}
+
+function drawGhost(g) {
+  const frightened = G.fright > 0 && g.mode === "active";
+  const flashing = frightened && G.fright < CONFIG.frightFlash && Math.floor(G.flashT * 8) % 2 === 0;
+  const x = g.x, y = g.y, r = 8;
+
+  if (g.mode !== "eaten") {
+    ctx.fillStyle = frightened ? (flashing ? "#f0f0f0" : "#2121de") : g.color;
+    ctx.beginPath();
+    ctx.arc(x, y - 1, r, Math.PI, 0);
+    ctx.lineTo(x + r, y + r - 2);
+    const wob = Math.floor(G.flashT * 10) % 2 === 0 ? 0 : 2;   // skirt animation
+    for (let i = 3; i >= -3; i -= 2) {
+      ctx.lineTo(x + i * (r/3), y + r - 2 - ((i+3)/2 % 2 === 0 ? wob : 3 - wob));
+    }
+    ctx.lineTo(x - r, y + r - 2);
+    ctx.closePath(); ctx.fill();
+  }
+  // eyes (always drawn — "eaten" is eyes only)
+  const d = DIRS[g.dir] || DIRS.left;
+  if (frightened && !flashing) {
+    ctx.fillStyle = "#ffb8ae";
+    ctx.fillRect(x-4, y-3, 2.5, 2.5); ctx.fillRect(x+1.5, y-3, 2.5, 2.5);
+    ctx.beginPath(); // squiggle mouth
+    ctx.strokeStyle = "#ffb8ae"; ctx.lineWidth = 1.2;
+    ctx.moveTo(x-4, y+3);
+    for (let i = 0; i < 4; i++) ctx.lineTo(x-4 + (i+0.5)*2, y + 3 + (i%2 ? 1.5 : -1.5));
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(x-3.5+d.x, y-2+d.y, 3, 0, 7); ctx.arc(x+3.5+d.x, y-2+d.y, 3, 0, 7); ctx.fill();
+    ctx.fillStyle = "#2121de";
+    ctx.beginPath(); ctx.arc(x-3.5+d.x*2, y-2+d.y*2, 1.5, 0, 7); ctx.arc(x+3.5+d.x*2, y-2+d.y*2, 1.5, 0, 7); ctx.fill();
+  }
+}
+
+/* ---- title / leaderboard screens ---- */
 
 </script>
 </body>
