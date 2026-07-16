@@ -806,6 +806,67 @@ function drawBoard() {
   }
 }
 
+/* ================= INPUT ================= */
+function pressDir(d) { player.nextDir = d; }
+
+window.addEventListener("keydown", e => {
+  AudioSys.ensure();
+  const k = e.key;
+
+  if (G.state === "INITIALS") {
+    // Typing goes to the real <input>; mute/pause must NOT steal letters like M/P
+    if (k === "Enter") { commitName(nameInputEl ? nameInputEl.value : ""); e.preventDefault(); }
+    return;
+  }
+
+  if (k === "m" || k === "M") { AudioSys.toggleMute(); return; }
+
+  if (G.state === "TITLE" || G.state === "BOARD") {
+    if (G.state === "BOARD" && G.boardStatus === "loading") return;
+    newGame(); return;
+  }
+  if (k === "p" || k === "P") { G.paused = !G.paused; return; }
+
+  const map = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right",
+                w:"up", s:"down", a:"left", d:"right", W:"up", S:"down", A:"left", D:"right" };
+  if (map[k]) { pressDir(map[k]); e.preventDefault(); }
+});
+
+if (nameInputEl) {
+  nameInputEl.addEventListener("keydown", e => {
+    // Keep game shortcuts from seeing name-entry keystrokes
+    e.stopPropagation();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitName(nameInputEl.value);
+    }
+  });
+}
+if (nameSkipEl) {
+  nameSkipEl.addEventListener("click", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (G.state === "INITIALS") commitName("");
+  });
+}
+
+// touch: swipe to steer, tap to start
+let touchStart = null;
+cvs.addEventListener("touchstart", e => { AudioSys.ensure(); touchStart = e.changedTouches[0]; e.preventDefault(); }, { passive:false });
+cvs.addEventListener("touchend", e => {
+  const t = e.changedTouches[0];
+  if (G.state === "TITLE" || G.state === "BOARD") {
+    if (G.state === "BOARD" && G.boardStatus === "loading") return;
+    newGame(); return;
+  }
+  if (G.state === "INITIALS") return; // use the HTML input / Skip button
+  if (!touchStart) return;
+  const dx = t.clientX - touchStart.clientX, dy = t.clientY - touchStart.clientY;
+  if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;   // tap, not swipe
+  pressDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+  e.preventDefault();
+}, { passive:false });
+
 
 </script>
 </body>
