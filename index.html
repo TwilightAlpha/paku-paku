@@ -207,6 +207,38 @@ const isWall = (c, r, canDoor=false) => {
   return ch === "#";
 };
 
+/* ================= HELPERS ================= */
+const DIRS = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+const OPP  = { up:"down", down:"up", left:"right", right:"left" };
+const tileOf = e => ({ c: Math.floor(e.x / T), r: Math.floor(e.y / T) });
+const centerOf = (c, r) => ({ x: c*T + T/2, y: r*T + T/2 });
+const dist2 = (a, b) => (a.x-b.x)**2 + (a.y-b.y)**2;
+const wrapX = x => (x < -T/2) ? COLS*T + T/2 - 1 : (x > COLS*T + T/2) ? -T/2 + 1 : x;
+
+/* Move an entity 1px at a time; turn only at tile centers. Keeps grid alignment exact. */
+function stepEntity(e, speed, canDoor=false) {
+  e.acc = (e.acc || 0) + speed;
+  while (e.acc >= 1) {
+    e.acc -= 1;
+    const { c, r } = tileOf(e);
+    const cen = centerOf(c, r);
+    const atCenter = Math.abs(e.x - cen.x) < 0.5 && Math.abs(e.y - cen.y) < 0.5;
+    if (atCenter) {
+      e.x = cen.x; e.y = cen.y;
+      if (e.decide) e.decide();                       // ghosts pick a direction here
+      const want = e.nextDir;
+      if (want && !isWall(c + DIRS[want].x, r + DIRS[want].y, canDoor)) { e.dir = want; e.nextDir = null; }
+      if (!e.dir || isWall(c + DIRS[e.dir].x, r + DIRS[e.dir].y, canDoor)) { e.moving = false; e.acc = 0; return; }
+    } else if (e.nextDir && e.dir && e.nextDir === OPP[e.dir]) {
+      e.dir = e.nextDir; e.nextDir = null;            // reversing is allowed mid-tile
+    }
+    if (!e.dir) { e.moving = false; e.acc = 0; return; }
+    e.moving = true;
+    e.x += DIRS[e.dir].x; e.y += DIRS[e.dir].y;
+    e.x = wrapX(e.x);
+  }
+}
+
 
 </script>
 </body>
