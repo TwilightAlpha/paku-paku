@@ -281,6 +281,57 @@ function currentWave() {
   return G.modeIndex % 2 === 0 ? "scatter" : "chase";
 }
 
+/* ---- Ghost AI: the four personalities ---- */
+function ghostTarget(g) {
+  if (g.mode === "eaten") return HOME;
+  if (G.fright > 0) return null;                 // random at intersections
+  if (currentWave() === "scatter") return g.scatter;
+  const pt = tileOf(player);
+  const pd = player.dir ? DIRS[player.dir] : DIRS.left;
+  switch (g.name) {
+    case "chaser":   return pt;                                        // straight at you
+    case "ambusher": return { c: pt.c + pd.x*4, r: pt.r + pd.y*4 };    // 4 ahead of your nose
+    case "flanker": {                                                   // pincer via chaser
+      const b = tileOf(ghosts[0]);
+      const ahead = { c: pt.c + pd.x*2, r: pt.r + pd.y*2 };
+      return { c: ahead.c + (ahead.c - b.c), r: ahead.r + (ahead.r - b.r) };
+    }
+    case "shy": {                                                       // bold far, cowardly close
+      const gt = tileOf(g);
+      const d2 = (gt.c-pt.c)**2 + (gt.r-pt.r)**2;
+      return d2 > 64 ? pt : g.scatter;
+    }
+  }
+}
+
+function ghostDecide(g) {
+  const { c, r } = tileOf(g);
+  const canDoor = g.mode === "eaten";
+  const opts = [];
+  for (const d of ["up","left","down","right"]) {
+    if (d === OPP[g.dir]) continue;
+    if (!isWall(c + DIRS[d].x, r + DIRS[d].y, canDoor)) opts.push(d);
+  }
+  if (!opts.length) { g.nextDir = OPP[g.dir]; return; }
+  let pick;
+  const target = ghostTarget(g);
+  if (!target) pick = opts[(Math.random() * opts.length) | 0];         // frightened
+  else {
+    let best = Infinity;
+    for (const d of opts) {
+      const nc = centerOf(c + DIRS[d].x, r + DIRS[d].y);
+      const tc = centerOf(target.c, target.r);
+      const dd = dist2(nc, tc);
+      if (dd < best) { best = dd; pick = d; }
+    }
+  }
+  g.nextDir = pick;
+}
+
+function reverseGhosts() {
+  for (const g of ghosts) if (g.mode === "active") g.nextDir = OPP[g.dir];
+}
+
 
 </script>
 </body>
