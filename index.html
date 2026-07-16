@@ -726,6 +726,49 @@ function drawGhost(g) {
 }
 
 /* ---- title / leaderboard screens ---- */
+function drawTitle() {
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffcc33"; ctx.font = "bold 40px monospace";
+  ctx.fillText(GAME_TITLE, COLS*T/2, 9*T);
+  ctx.fillStyle = "#888"; ctx.font = "12px monospace";
+  ctx.fillText("EAT EVERY DOT \u00B7 DODGE THE GHOSTS", COLS*T/2, 11*T);
+  ctx.fillText("ARROWS \u00B7 WASD \u00B7 SWIPE TO MOVE", COLS*T/2, 12*T);
+
+  // visual legend — teaches the rules without words
+  const lx = COLS*T/2 - 88, ly = 22.5*T;
+  ctx.textAlign = "left"; ctx.font = "11px monospace";
+  ctx.fillStyle = "#ffb8ae"; ctx.fillRect(lx, ly-3, 4, 4);
+  ctx.fillStyle = "#aaa";    ctx.fillText("= 10", lx+12, ly+2);
+  ctx.fillStyle = "#ffb8ae"; ctx.beginPath(); ctx.arc(lx+62, ly-1, 5.5, 0, 7); ctx.fill();
+  ctx.fillStyle = "#aaa";    ctx.fillText("= GHOSTS TURN BLUE", lx+74, ly+2);
+  ctx.fillStyle = "#2121de"; ctx.beginPath();
+  ctx.arc(lx+8, ly+22, 7, Math.PI, 0); ctx.lineTo(lx+15, ly+28); ctx.lineTo(lx+1, ly+28);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#ffb8ae"; ctx.fillRect(lx+4, ly+19, 2, 2); ctx.fillRect(lx+9, ly+19, 2, 2);
+  ctx.fillStyle = "#aaa";    ctx.fillText("= EAT THEM! 200-400-800-1600", lx+22, ly+26);
+  ctx.textAlign = "center";
+
+  // ghost parade
+  const px = ((G.flashT * 60) % (COLS*T + 200)) - 100;
+  drawArcMan(px, 15*T, 8, "right", G.flashT * 3, "#ffcc33");
+  ghosts.forEach((g, i) => {
+    const gx = px - 30 - i * 24;
+    ctx.fillStyle = g.color;
+    ctx.beginPath(); ctx.arc(gx, 15*T - 1, 8, Math.PI, 0);
+    ctx.lineTo(gx + 8, 15*T + 6); ctx.lineTo(gx - 8, 15*T + 6);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(gx-3, 15*T-3, 2.5, 0, 7); ctx.arc(gx+3, 15*T-3, 2.5, 0, 7); ctx.fill();
+  });
+
+  if (Math.floor(G.flashT * 2) % 2 === 0) {
+    ctx.fillStyle = "#fff"; ctx.font = "bold 15px monospace";
+    ctx.fillText("PRESS ANY KEY \u00B7 TAP TO START", COLS*T/2, 20*T);
+  }
+  ctx.fillStyle = "#444"; ctx.font = "10px monospace";
+  ctx.fillText("iD8 GAME CREATION COMPETITION 2026", COLS*T/2, 27*T);
+}
+
 
 </script>
 </body>
