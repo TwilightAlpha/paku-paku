@@ -66,6 +66,37 @@
 </div>
 <div id="hint">arrows / wasd &middot; swipe on touch &middot; m mute &middot; p pause</div>
 
+<script>
+"use strict";
+/* ============================================================
+   PAKU PAKU — a faithful maze-chase arcade game
+   Single file. No dependencies. Runs offline.
+   All tuning lives in CONFIG. Rename via GAME_TITLE.
+   ============================================================ */
 
+const GAME_TITLE = "PAKU PAKU";
+
+const CONFIG = {
+  tile: 16,
+  hudTop: 32,               // px reserved above maze
+  playerSpeed: 2.2,         // px per 60Hz tick
+  ghostSpeed: 2.05,
+  frightSpeed: 1.25,
+  eyesSpeed: 4.0,
+  tunnelSpeed: 1.1,
+  speedRampPerLevel: 0.05,  // +5% per level, capped
+  speedRampCap: 1.25,
+  frightTimeBase: 6.0,      // seconds at level 1
+  frightTimeMin: 1.5,
+  frightFlash: 2.0,         // flashing during final seconds
+  modeWaves: [7,20,7,20,5,20,5,Infinity], // scatter,chase,scatter,...
+  releaseDelays: [0, 1.5, 4.5, 8.0],      // seconds per ghost
+  extraLifeAt: 10000,
+  lives: 3,
+  leaderboardSize: 10,
+};
+
+
+</script>
 </body>
 </html>
