@@ -133,6 +133,65 @@ const MAP_SRC = [
 
 const T = CONFIG.tile, COLS = 28, ROWS = 31, HUD = CONFIG.hudTop;
 const TUNNEL_ROW = 14;
+const DOOR = { c: 13, r: 12 };           // left door tile (13 & 14 are door)
+const HOME = { c: 13, r: 11 };           // just above door — eyes target / exit point
+const cvs = document.getElementById("game");
+const ctx = cvs.getContext("2d");
+const nameEntryEl = document.getElementById("nameEntry");
+const nameInputEl = document.getElementById("nameInput");
+const nameSkipEl = document.getElementById("nameSkip");
+
+/* ================= AUDIO — synthesized, no samples ================= */
+const AudioSys = (() => {
+  let ac = null, master = null, muted = false;
+  let sirenOsc = null, sirenGain = null, sirenMode = "";
+  function ensure() {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = 0.25; master.connect(ac.destination);
+    }
+    if (ac.state === "suspended") ac.resume();
+  }
+  function blip(freq, dur, type="square", vol=1, slide=0) {
+    if (muted || !ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    if (slide) o.frequency.linearRampToValueAtTime(freq + slide, ac.currentTime + dur);
+    g.gain.setValueAtTime(0.5 * vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + dur);
+  }
+  let wak = false;
+  return {
+    ensure,
+    toggleMute() { muted = !muted; if (sirenGain) sirenGain.gain.value = muted ? 0 : 0.05; return muted; },
+    get muted() { return muted; },
+    waka()      { wak = !wak; blip(wak ? 520 : 380, 0.07, "square", 0.7); },
+    power()     { blip(200, 0.4, "sawtooth", 0.8, 300); },
+    eatGhost()  { blip(300, 0.12, "square", 1, 500); setTimeout(()=>blip(700,0.15,"square",1,400), 60); },
+    death()     { for (let i=0;i<6;i++) setTimeout(()=>blip(600-i*85, 0.16, "sawtooth", 0.9, -60), i*110); },
+    jingle()    { const n=[392,523,659,784,659,784]; n.forEach((f,i)=>setTimeout(()=>blip(f,0.14,"triangle",0.9), i*130)); },
+    extraLife() { [880,1100,1320].forEach((f,i)=>setTimeout(()=>blip(f,0.1,"square",0.8), i*90)); },
+    siren(mode) { // "" | "normal" | "fright"
+      if (!ac) return;
+      if (mode === sirenMode) return;
+      sirenMode = mode;
+      if (sirenOsc) { try { sirenOsc.stop(); } catch(e){} sirenOsc = null; }
+      if (!mode) return;
+      sirenOsc = ac.createOscillator(); sirenGain = ac.createGain();
+      const lfo = ac.createOscillator(), lfoG = ac.createGain();
+      sirenOsc.type = "triangle";
+      sirenOsc.frequency.value = mode === "fright" ? 320 : 180;
+      lfo.frequency.value = mode === "fright" ? 6 : 1.2;
+      lfoG.gain.value = mode === "fright" ? 60 : 40;
+      lfo.connect(lfoG); lfoG.connect(sirenOsc.frequency);
+      sirenGain.gain.value = muted ? 0 : 0.05;
+      sirenOsc.connect(sirenGain); sirenGain.connect(master);
+      sirenOsc.start(); lfo.start();
+    },
+  };
+})();
+
 
 </script>
 </body>
