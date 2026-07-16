@@ -769,6 +769,43 @@ function drawTitle() {
   ctx.fillText("iD8 GAME CREATION COMPETITION 2026", COLS*T/2, 27*T);
 }
 
+function drawBoard() {
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ff2121"; ctx.font = "bold 24px monospace";
+  ctx.fillText("HIGH SCORES", COLS*T/2, 6*T);
+
+  if (G.boardStatus === "loading") {
+    ctx.fillStyle = "#21ffff"; ctx.font = "bold 14px monospace";
+    ctx.fillText("LOADING SCORES...", COLS*T/2, 12*T);
+  } else {
+    const leftX = 36, rightX = COLS*T - 36;
+    G.board.forEach((e, i) => {
+      const y = (8.5 + i * 1.55) * T;
+      ctx.fillStyle = i === 0 ? "#ffcc33" : "#fff";
+      ctx.font = "bold 14px monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(`${i + 1}. ${formatBoardName(e.name, 14)}`, leftX, y);
+      ctx.textAlign = "right";
+      ctx.fillText(String(e.score), rightX, y);
+    });
+    if (G.boardOffline) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#888"; ctx.font = "11px monospace";
+      ctx.fillText("OFFLINE \u00B7 SESSION SCORES", COLS*T/2, (8.5 + G.board.length * 1.55 + 0.8) * T);
+    }
+  }
+
+  ctx.textAlign = "center";
+  if (G.state === "INITIALS") {
+    // Score only on canvas — label/input/skip live in the HTML overlay below
+    ctx.fillStyle = "#21ffff"; ctx.font = "bold 15px monospace";
+    ctx.fillText("YOUR SCORE: " + G.score, COLS*T/2, 19.5*T);
+  } else if (G.boardStatus !== "loading" && Math.floor(G.flashT * 2) % 2 === 0) {
+    ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace";
+    ctx.fillText("PRESS ANY KEY \u00B7 TAP TO PLAY", COLS*T/2, 26*T);
+  }
+}
+
 
 </script>
 </body>
