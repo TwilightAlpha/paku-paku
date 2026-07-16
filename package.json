@@ -1,0 +1,9 @@
+{
+  "name": "paku-paku",
+  "version": "0.1.0",
+  "description": "Faithful maze-chase arcade game for the iD8 Game Creation Competition 2026",
+  "scripts": {
+    "test": "node test/smoke.test.js"
+  },
+  "license": "MIT"
+}
