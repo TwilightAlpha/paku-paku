@@ -52,6 +52,26 @@ for (let i = 0; i < 60*6 && G.state !== "GAMEOVER"; i++) update(1/60);
 assert(G.state === "GAMEOVER", "last life -> GAMEOVER");
 for (let i = 0; i < 60*3; i++) update(1/60);
 assert(G.state === "INITIALS", "qualifying score -> INITIALS entry");
+assert(sanitizeName("   ") === "PLAYER", "blank name -> PLAYER");
+assert(sanitizeName("A".repeat(25)).length === 20, "name capped at 20");
+assert(sanitizeName("hi\u0000there") === "hithere", "control chars stripped");
+assert(formatBoardName("ABCDEFGHIJKLMNOPQRST", 14).length <= 14, "board name truncates visually");
+G.pendingScore = G.score;
+commitName("ALEX THIHA");
+assert(G.state === "BOARD", "commitName enters BOARD");
+assert(G.board.some(e => e.name === "ALEX THIHA"), "leaderboard committed full name");
+
+// Mute key must not fire during name entry (typing "M" / "m")
+G.state = "INITIALS";
+const mutedBefore = AudioSys.muted;
+windowListeners.keydown({ key: "m", preventDefault: noop });
+assert(AudioSys.muted === mutedBefore, "m during INITIALS does not toggle mute");
+windowListeners.keydown({ key: "M", preventDefault: noop });
+assert(AudioSys.muted === mutedBefore, "M during INITIALS does not toggle mute");
+G.state = "PLAY";
+windowListeners.keydown({ key: "m", preventDefault: noop });
+assert(AudioSys.muted !== mutedBefore, "m during PLAY toggles mute");
+
 draw();
 console.log(failures.length ? "\nFAILURES:\n" + failures.join("\n") : "\nALL TESTS PASSED");
 process.exit(failures.length ? 1 : 0);
