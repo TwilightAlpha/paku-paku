@@ -867,7 +867,29 @@ cvs.addEventListener("touchend", e => {
   e.preventDefault();
 }, { passive:false });
 
+/* ================= SCALE TO VIEWPORT ================= */
+function fit() {
+  const s = Math.min(window.innerWidth / cvs.width, (window.innerHeight - 40) / cvs.height);
+  cvs.style.width = (cvs.width * s) + "px";
+  cvs.style.height = (cvs.height * s) + "px";
+}
+window.addEventListener("resize", fit); fit();
 
+/* ================= MAIN LOOP — fixed 60Hz logic ================= */
+let last = performance.now(), accum = 0;
+const STEP = 1 / 60;
+function frame(now) {
+  requestAnimationFrame(frame);
+  accum += Math.min(0.1, (now - last) / 1000);
+  last = now;
+  while (accum >= STEP) {
+    accum -= STEP;
+    if (!G.paused) update(STEP);
+  }
+  draw();
+}
+loadMap();
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
