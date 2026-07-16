@@ -492,6 +492,94 @@ function enterBoard() {
     });
 }
 // Back-compat alias used by older call sites / tests
+function commitInitials() { commitName(nameInputEl ? nameInputEl.value : ""); }
+
+function updatePlay(dt) {
+  const scale = speedScale();
+
+  // Scatter/chase schedule pauses while frightened
+  if (G.fright > 0) {
+    G.fright -= dt;
+    if (G.fright <= 0) { G.fright = 0; G.ghostCombo = 0; }
+  } else {
+    G.modeT += dt;
+    const wave = CONFIG.modeWaves[Math.min(G.modeIndex, CONFIG.modeWaves.length - 1)];
+    if (G.modeT >= wave) { G.modeT = 0; G.modeIndex++; reverseGhosts(); }
+  }
+  AudioSys.siren(G.fright > 0 ? "fright" : "normal");
+
+  /* -- player -- */
+  const pt0 = tileOf(player);
+  const inTunnelP = pt0.r === TUNNEL_ROW && (pt0.c <= 5 || pt0.c >= 22);
+  stepEntity(player, CONFIG.playerSpeed * scale * (inTunnelP ? 0.85 : 1));
+  if (player.moving) player.mouth += dt * 12;
+
+  // eat dots
+  const pt = tileOf(player);
+  if (pt.c >= 0 && pt.c < COLS) {
+    const ch = grid[pt.r][pt.c];
+    if (ch === "." || ch === "o") {
+      grid[pt.r][pt.c] = " "; dotsLeft--;
+      if (ch === ".") { addScore(10); AudioSys.waka(); }
+      else {
+        addScore(50); AudioSys.power();
+        G.fright = frightTime(); G.ghostCombo = 0;
+        reverseGhosts();
+      }
+      if (dotsLeft <= 0) { setState("CLEAR"); AudioSys.siren(""); return; }
+    }
+  }
+
+  /* -- ghosts -- */
+  for (let i = 0; i < ghosts.length; i++) {
+    const g = ghosts[i];
+    if (g.mode === "house") {
+      g.releaseT -= dt; g.bob += dt * 6;
+      g.y = centerOf(g.houseCol, 14).y + Math.sin(g.bob) * 3;
+      if (g.releaseT <= 0) g.mode = "exiting";
+    } else if (g.mode === "exiting") {
+      const doorX = centerOf(13, 14).x + T/2;      // center between door tiles
+      const exitY = centerOf(HOME.c, HOME.r).y;
+      if (Math.abs(g.x - doorX) > 1) { g.x += Math.sign(doorX - g.x) * 1.5; g.dir = doorX > g.x ? "right" : "left"; }
+      else if (g.y > exitY) { g.x = doorX; g.y -= 1.5; g.dir = "up"; }
+      else {
+        const h = centerOf(HOME.c, HOME.r); g.x = h.x; g.y = h.y;
+        g.mode = "active"; g.dir = "left"; g.acc = 0; g.decide = () => ghostDecide(g);
+      }
+    } else {
+      const gt = tileOf(g);
+      const inTunnel = gt.r === TUNNEL_ROW && (gt.c <= 5 || gt.c >= 22);
+      let sp = CONFIG.ghostSpeed * scale;
+      if (g.mode === "eaten") sp = CONFIG.eyesSpeed;
+      else if (G.fright > 0) sp = CONFIG.frightSpeed;
+      else if (inTunnel) sp = CONFIG.tunnelSpeed;
+      stepEntity(g, sp, g.mode === "eaten");
+
+      if (g.mode === "eaten") {
+        const home = centerOf(HOME.c, HOME.r);
+        if (dist2(g, home) < 9) {  // arrived — dive into house and respawn
+          const h = centerOf(g.houseCol, 14); g.x = h.x; g.y = h.y;
+          g.mode = "house"; g.releaseT = 1.0; g.decide = null;
+        }
+      }
+    }
+
+    // collision with player
+    if ((g.mode === "active") && dist2(g, player) < 100) {
+      if (G.fright > 0) {
+        g.mode = "eaten";
+        const pts = 200 * Math.pow(2, G.ghostCombo++);
+        addScore(pts); popup(g.x, g.y, String(pts));
+        AudioSys.eatGhost(); G.freeze = 0.35;
+      } else {
+        setState("DYING"); player.deathT = 0;
+        AudioSys.siren(""); AudioSys.death();
+        return;
+      }
+    }
+  }
+}
+
 
 </script>
 </body>
